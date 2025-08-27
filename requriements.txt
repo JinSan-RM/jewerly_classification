@@ -1,7 +1,11 @@
-torch
-torchvision 
-timm 
 matplotlib 
 seaborn 
 scikit-learn 
 tqdm
+Flask==3.0.0
+flask-cors==4.0.0
+torch>=2.0.0
+torchvision>=0.15.0
+timm==0.9.12
+Pillow==10.1.0
+numpy==1.24.3
