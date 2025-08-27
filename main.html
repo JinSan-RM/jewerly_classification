@@ -561,7 +561,7 @@
         <!-- 사이드바 -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>📊 분석 히스토리</h2>
+                <h2>분석 히스토리</h2>
                 <p>최근 분석 기록</p>
             </div>
             
@@ -584,13 +584,13 @@
             <button class="toggle-sidebar" id="toggleSidebar">☰</button>
             
             <header class="header">
-                <h1>🔍 주얼리 AI 자동 분류</h1>
+                <h1>주얼리 AI 자동 분류</h1>
                 <p>AI 기술로 주얼리 이미지를 자동으로 분류합니다</p>
             </header>
 
             <div class="content-grid">
                 <section class="upload-section">
-                    <h2 style="margin-bottom: 20px; color: #667eea;">📷 이미지 업로드</h2>
+                    <h2 style="margin-bottom: 20px; color: #667eea;">이미지 업로드</h2>
                     
                     <div class="upload-area" id="uploadArea">
                         <div class="upload-icon">📎</div>
@@ -609,7 +609,7 @@
                 </section>
 
                 <section class="preview-section">
-                    <h2 style="margin-bottom: 20px; color: #667eea;">🖼️ 이미지 미리보기</h2>
+                    <h2 style="margin-bottom: 20px; color: #667eea;">이미지 미리보기</h2>
                     
                     <div id="noImagePlaceholder">
                         <div style="text-align: center; padding: 40px; color: #999;">
@@ -633,17 +633,17 @@
                         </div>
 
                         <button id="classifyBtn" class="classify-btn">
-                            🔍 AI 분류 시작
+                            Jewerly AI 분류 시작
                         </button>
                     </div>
                 </section>
 
                 <section id="resultsSection" class="results-section hidden">
-                    <h2>📊 분류 결과</h2>
+                    <h2>분류 결과</h2>
                     
                     <div id="loadingIndicator" class="loading hidden">
                         <div class="spinner"></div>
-                        <p>AI가 이미지를 분석하고 있습니다...</p>
+                        <p>AI가 이미지를 분석하고 있습니다</p>
                     </div>
 
                     <div id="resultsContainer" class="hidden">
@@ -656,10 +656,6 @@
                     <div class="stat-card">
                         <div class="stat-number" id="totalAnalyzed">0</div>
                         <div class="stat-label">총 분석 횟수</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="avgConfidence">0%</div>
-                        <div class="stat-label">평균 정확도</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="mostCommon">-</div>
@@ -685,7 +681,7 @@
         };
 
         // API 설정 - 실제 Flask 서버 주소
-        const API_BASE_URL = 'http://localhost:8000';
+        const API_BASE_URL = 'http://localhost:5000';
 
         // 주얼리 카테고리 정의
         const JEWELRY_CATEGORIES = {
@@ -693,7 +689,7 @@
             'necklace': { ko: '목걸이', emoji: '📿' },
             'earring': { ko: '귀걸이', emoji: '👂' },
             'bracelet': { ko: '팔찌', emoji: '🔗' },
-            'other': { ko: '기타', emoji: '✨' }
+            'anklet': { ko: '발찌', emoji: '✨' }
         };
 
         // DOM 요소 참조
@@ -828,7 +824,7 @@
             document.getElementById('overlayCategory').innerHTML = 
                 `${categoryInfo.emoji} ${categoryInfo.ko}`;
             document.getElementById('overlayConfidence').textContent = 
-                `정확도: ${(topPrediction.confidence * 100).toFixed(1)}%`;
+                `정확도: ${(topPrediction.probability * 100).toFixed(1)}%`;
                 
             imageOverlay.classList.add('show');
         }
@@ -851,6 +847,9 @@
             try {
                 // 실제 API 호출
                 const result = await callRealAPI(currentImage);
+                console.log('API result:', result);
+                console.log('top_prediction:', result.top_prediction);
+                console.log('confidence:', result.top_prediction.probability);
                 displayResults(result);
                 showImageOverlay(result);
                 addToHistory(result);
@@ -884,11 +883,11 @@
                     throw new Error(result.error || '알 수 없는 오류가 발생했습니다.');
                 }
 
-                console.log('✅ API 응답:', result);
+                console.log('API 응답:', result);
                 return result;
 
             } catch (error) {
-                console.error('❌ API 호출 실패:', error);
+                console.error('API 호출 실패:', error);
                 
                 // 네트워크 오류나 서버 연결 실패시 더 구체적인 메시지
                 if (error.message.includes('Failed to fetch')) {
@@ -913,7 +912,7 @@
             // 최상위 예측 결과 표시
             document.getElementById('topPrediction').innerHTML = `
                 <h3>${categoryInfo.emoji} ${categoryInfo.ko}</h3>
-                <div class="confidence">${(topPrediction.confidence * 100).toFixed(1)}%</div>
+                <div class="confidence">${(topPrediction.probability * 100).toFixed(1)}%</div>
                 <p>AI가 가장 확신하는 분류 결과입니다</p>
             `;
 
@@ -921,7 +920,8 @@
             const allPredictionsHTML = result.predictions.map(pred => {
                 const categoryInfo = JEWELRY_CATEGORIES[pred.category];
                 const percentage = (pred.probability * 100).toFixed(1);
-                
+                console.log(`예측: ${categoryInfo.ko}, 확신도: ${percentage}%`);
+
                 return `
                     <div class="prediction-item">
                         <span class="category-name">${categoryInfo.emoji} ${categoryInfo.ko}</span>
@@ -956,8 +956,9 @@
                 fileName: currentImage.name,
                 result: result,
                 topCategory: result.top_prediction.category,
-                confidence: result.top_prediction.confidence
+                confidence: result.top_prediction.probability                
             };
+            console.log('히스토리 추가:', historyItem);
 
             analysisHistory.unshift(historyItem); // 최신 항목을 맨 앞에 추가
             
@@ -990,7 +991,8 @@
             const historyHTML = analysisHistory.map(item => {
                 const categoryInfo = JEWELRY_CATEGORIES[item.topCategory];
                 const timeAgo = getTimeAgo(new Date(item.timestamp));
-                
+                console.log(`히스토리 로드: ${item.id}, ${item}, ${categoryInfo.ko}, ${timeAgo}`);
+
                 return `
                     <div class="history-item" onclick="loadHistoryItem('${item.id}')" data-id="${item.id}">
                         <img src="${item.imageData}" alt="${item.fileName}" class="history-thumbnail">
@@ -1000,7 +1002,7 @@
                             </div>
                             <div class="history-result">
                                 <span class="history-category">${categoryInfo.emoji} ${categoryInfo.ko}</span>
-                                <span class="history-confidence">${(item.confidence * 100).toFixed(1)}%</span>
+                                <span class="history-confidence">${(item.confidence  * 100).toFixed(1)}%</span>
                             </div>
                             <div class="history-time">${timeAgo}</div>
                         </div>
@@ -1013,6 +1015,7 @@
 
         // 히스토리 항목 로드
         function loadHistoryItem(itemId) {
+            console.log('analysisHistory:', analysisHistory);
             const item = analysisHistory.find(h => h.id == itemId);
             if (!item) return;
 
@@ -1028,6 +1031,7 @@
             imagePreview.src = item.imageData;
             noImagePlaceholder.classList.add('hidden');
             imagePreviewContainer.classList.remove('hidden');
+            
 
             // 이미지 정보 업데이트
             document.getElementById('imageDetails').innerHTML = `
@@ -1123,11 +1127,7 @@
             }
 
             document.getElementById('totalAnalyzed').textContent = analysisStats.totalAnalyzed;
-            
-            const avgConfidence = analysisStats.totalAnalyzed > 0 
-                ? (analysisStats.confidenceSum / analysisStats.totalAnalyzed * 100).toFixed(1)
-                : 0;
-            document.getElementById('avgConfidence').textContent = `${avgConfidence}%`;
+        
 
             const mostCommonCategory = Object.keys(analysisStats.categoryCount).reduce((a, b) => 
                 analysisStats.categoryCount[a] > analysisStats.categoryCount[b] ? a : b, 
@@ -1184,10 +1184,10 @@
                 const response = await fetch(`${API_BASE_URL}/health`);
                 if (response.ok) {
                     const status = await response.json();
-                    console.log('✅ 서버 상태:', status);
+                    console.log('서버 상태:', status);
                     return true;
                 } else {
-                    console.warn('⚠️ 서버 응답 오류:', response.status);
+                    console.warn('서버 응답 오류:', response.status);
                     return false;
                 }
             } catch (error) {
